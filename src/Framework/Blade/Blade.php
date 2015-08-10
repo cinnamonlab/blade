@@ -68,9 +68,9 @@ class Blade {
 	 * @param  string  $path
 	 * @return string
 	 */
-	public static function compile($view)
+	public static function compile(View $view)
 	{
-		return static::compile_string(file_get_contents($view->path), $view);
+		return static::compile_string(file_get_contents($view->originalPath() ) );
 	}
 
 	/**
@@ -120,7 +120,7 @@ class Blade {
 		// We will add a "render" statement to the end of the templates and
 		// then slice off the "@layout" shortcut from the start so the
 		// sections register before the parent template renders.
-		return implode(CRLF, array_slice($lines, 1));
+		return implode("\n", array_slice($lines, 1));
 	}
 
 	/**
@@ -157,7 +157,7 @@ class Blade {
 	 */
 	protected static function compile_echos($value)
 	{
-		$value = preg_replace('/\{\{\{(.+?)\}\}\}/', '<?php echo HTML::entities($1); ?>', $value);
+		$value = preg_replace('/\{\{\{(.+?)\}\}\}/', '<?php echo htmlentities($1); ?>', $value);
 
 		return preg_replace('/\{\{(.+?)\}\}/', '<?php echo $1; ?>', $value);
 	}
@@ -289,7 +289,7 @@ class Blade {
 	{
 		$pattern = static::matcher('include');
 
-		return preg_replace($pattern, '$1<?php echo view$2->with(get_defined_vars())->render(); ?>', $value);
+		return preg_replace($pattern, '$1<?php echo \Framework\Blade\View::make$2->with(get_defined_vars())->render(); ?>', $value);
 	}
 
 	/**
@@ -302,7 +302,7 @@ class Blade {
 	{
 		$pattern = static::matcher('render');
 
-		return preg_replace($pattern, '$1<?php echo render$2; ?>', $value);
+		return preg_replace($pattern, '$1<?php echo \Framework\Blade\View::make$2->render(); ?>', $value);
 	}
 
 	/**

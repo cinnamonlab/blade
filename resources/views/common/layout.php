@@ -1,0 +1,5 @@
+@include('common.footer')
+@include('common.header')
+@yield('header')
+@yield('content')
+@yield('footer')

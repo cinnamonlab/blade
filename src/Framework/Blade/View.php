@@ -9,12 +9,11 @@ use Framework\Config;
 
 class View extends Response
 {
-    private $template;
-    private $path = null;
-    private $data;
+    private $path;
+    private $data = array();
 
     function __construct( $template ) {
-        $this->template = Config::get('blade.template')
+        $this->path = Config::get('blade.template')
             . "/" . preg_replace("/\./", "/", $template) . ".php";
 
         parent::__construct();
@@ -23,8 +22,8 @@ class View extends Response
     function display( ) {
 
         $this->setCode(200)
-            ->setContentType('text/html');
-
+            ->setContentType('text/html')
+            ->setContent( $this->get() );
         parent::display();
 
     }
@@ -41,7 +40,7 @@ class View extends Response
         return $this;
     }
 
-    function make( $templates ) {
+    static function make( $templates ) {
         return new View( $templates );
     }
 
@@ -54,7 +53,10 @@ class View extends Response
         }
 
         return $compiled;
+    }
 
+    public function originalPath() {
+        return $this->path;
     }
 
     /**
@@ -77,6 +79,11 @@ class View extends Response
         }
         $content = ob_get_clean();
 
-        return $content;
+        return trim($content);
     }
+
+    public function render() {
+        return $this->get();
+    }
+
 }
