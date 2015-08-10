@@ -4,6 +4,7 @@ namespace Framework\Blade;
 
 use Framework;
 use Closure;
+use Framework\Config;
 
 class Blade {
 
@@ -41,41 +42,6 @@ class Blade {
 	 */
 	protected static $extensions = array();
 
-	/**
-	 * Register the Blade view engine with Laravel.
-	 *
-	 * @return void
-	 */
-	public static function sharpen()
-	{
-		Event::listen(View::engine, function(View $view)
-		{
-			// The Blade view engine should only handle the rendering of views which
-			// end with the Blade extension. If the given view does not, we will
-			// return false so the View can be rendered as normal.
-			if ( ! Helper::str_contains($view->path, ".blade.php"))
-			{
-				return;
-			}
-
-			$compiled = Blade::compiled($view->path);
-
-			// If the view doesn't exist or has been modified since the last time it
-			// was compiled, we will recompile the view into pure PHP from it's
-			// Blade representation, writing it to cached storage.
-			if ( ! file_exists($compiled) or Blade::expired($view->view, $view->path))
-			{
-				file_put_contents($compiled, Blade::compile($view));
-			}
-
-			$view->path = $compiled;
-
-			// Once the view has been compiled, we can simply set the path to the
-			// compiled view on the view instance and call the typical "get"
-			// method on the view to evaluate the compiled PHP view.
-			return ltrim($view->get());
-		});
-	}
 
 	/**
 	 * Register a custom Blade compiler.
@@ -95,17 +61,6 @@ class Blade {
 		static::$extensions[] = $compiler;
 	}
 
-	/**
-	 * Determine if a view is "expired" and needs to be re-compiled.
-	 *
-	 * @param  string  $view
-	 * @param  string  $path
-	 * @return bool
-	 */
-	public static function expired($view, $path)
-	{
-		return filemtime($path) > filemtime(static::compiled($path));
-	}
 
 	/**
 	 * Compiles the specified file containing Blade pseudo-code into valid PHP.
@@ -125,16 +80,12 @@ class Blade {
 	 * @param  View    $view
 	 * @return string
 	 */
-	public static function compile_string($value, $view = null)
+	public static function compile_string($value)
 	{
-		foreach (static::$compilers as $compiler)
-		{
+		foreach (static::$compilers as $compiler) {
 			$method = "compile_{$compiler}";
-
-			$value = static::$method($value, $view);
-		}
-		$value = \WP_Blade::compile_string($value, $view);
-
+			$value = static::$method($value);
+        }
 		return $value;
 	}
 
@@ -149,7 +100,7 @@ class Blade {
 		// If the Blade template is not using "layouts", we'll just return it
 		// unchanged since there is nothing to do with layouts and we will
 		// just let the other Blade compilers handle the rest.
-		if ( ! starts_with($value, '@layout'))
+		if ( ! Helper::starts_with($value, '@layout'))
 		{
 			return $value;
 		}
@@ -378,7 +329,7 @@ class Blade {
 	protected static function compile_yields($value)
 	{
 		$pattern = static::matcher('yield');
-		return preg_replace($pattern, '$1<?php echo \\Laravel\\Section::do_yield$2; ?>', $value);
+		return preg_replace($pattern, '$1<?php echo \\Framework\\Blade\\Section::do_yield$2; ?>', $value);
 	}
 
 	/**
@@ -388,7 +339,7 @@ class Blade {
 	 */
 	protected static function compile_yield_sections($value)
 	{
-		$replace = '<?php echo \\Laravel\\Section::yield_section(); ?>';
+		$replace = '<?php echo \\Framework\\Blade\\Section::yield_section(); ?>';
 
 		return str_replace('@yield_section', $replace, $value);
 	}
@@ -405,7 +356,7 @@ class Blade {
 	{
 		$pattern = static::matcher('section');
 
-		return preg_replace($pattern, '$1<?php \\Laravel\\Section::start$2; ?>', $value);
+		return preg_replace($pattern, '$1<?php \\Framework\\Blade\\Section::start$2; ?>', $value);
 	}
 
 	/**
@@ -418,7 +369,7 @@ class Blade {
 	 */
 	protected static function compile_section_end($value)
 	{
-		return preg_replace('/@endsection/', '<?php \\Laravel\\Section::stop(); ?>', $value);
+		return preg_replace('/@endsection/', '<?php \\Framework\\Blade\\Section::stop(); ?>', $value);
 	}
 
 	/**
