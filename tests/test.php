@@ -1,6 +1,5 @@
 <?php
 
-define('__APP__', __DIR__ . "/..");
 
 include "../vendor/autoload.php";
 

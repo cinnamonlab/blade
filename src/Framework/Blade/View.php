@@ -59,6 +59,16 @@ class View extends Response
         return $this->path;
     }
 
+
+    /**
+     * getContent
+     *
+     * copy of get
+     */
+    public function getContent( ) {
+        return $this->get();
+    }
+
     /**
      * Get the final output by String
      * @return string
